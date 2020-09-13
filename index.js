@@ -1,7 +1,7 @@
 const { App } = require('@slack/bolt');
 require('dotenv').config();
 const store = require('./store');
-
+let userlist = store.getUsers();
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
   signingSecret: process.env.SLACK_SIGNING_SECRET
@@ -18,13 +18,15 @@ const createMyReviews = async (userId) => {
     }
   }];
 
-  let userlist = store.getUsers();
   if (userlist.length === 0) {
     store.setUsers((await app.client.users.list({ token: process.env.SLACK_BOT_TOKEN })).members)
     userlist = store.getUsers();
   }
   console.log(userlist);
   messages.forEach(element => {
+    block.push({
+      "type": "divider"
+    });
     block.push({
       "type": "section",
       "text": {
@@ -42,7 +44,6 @@ const createMyReviews = async (userId) => {
       }
     })
     const reviewers = store.getUsersFromMessageId(element.id);
-    console.log(reviewers)
     block.push(
       {
         "type": "section",
@@ -53,6 +54,58 @@ const createMyReviews = async (userId) => {
           }).join('\n')
         }
       });
+  });
+  return block;
+}
+
+const createMyRequested = async (userId) => {
+  const requests = store.getMyRequests(userId);
+
+  let block = [{
+    "type": "divider"
+  },
+  {
+    "type": "header",
+    "text": {
+      "type": "plain_text",
+      "text": "依頼されているもの",
+      "emoji": true
+    }
+  }];
+  if (userlist.length === 0) {
+    store.setUsers((await app.client.users.list({ token: process.env.SLACK_BOT_TOKEN })).members)
+    userlist = store.getUsers();
+  }
+  requests.forEach(element => {
+    block.push({
+      "type": "divider"
+    });
+    block.push({
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": element.message
+      },
+      "accessory": {
+        "type": "button",
+        "text": {
+          "type": "plain_text",
+          "text": "OK",
+          "emoji": true
+        },
+        "value": "delete"
+      }
+    })
+    block.push({
+			"type": "context",
+			"elements": [
+				{
+					"type": "plain_text",
+					"text": `依頼者: ${userlist.find(user => user.id === element.userid).name}`,
+					"emoji": true
+				}
+			]
+		});
   });
   return block;
 }
@@ -79,6 +132,7 @@ app.event('app_home_opened', async ({ ack, body, client }) => {
 
     ];
     blocks = blocks.concat(await createMyReviews(userid));
+    blocks = blocks.concat(await createMyRequested(userid));
     console.log(blocks);
     client.views.publish({
       user_id: body.event.user,
