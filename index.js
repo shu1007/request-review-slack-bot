@@ -31,40 +31,13 @@ app.event("app_home_opened", async ({ ack, body, client }) => {
 
 app.action("deleteTaskConfirm", async ({ ack, body, client }) => {
     await ack();
+
     try {
         const result = await client.views.open({
             // 適切な trigger_id を受け取ってから 3 秒以内に渡す
             trigger_id: body.trigger_id,
             // view の値をペイロードに含む
-            view: {
-                type: "modal",
-                callback_id: "deleteTask",
-                private_metadata: body.actions[0].value,
-                title: {
-                    type: "plain_text",
-                    text: "確認",
-                    emoji: true
-                },
-                submit: {
-                    type: "plain_text",
-                    text: "削除する",
-                    emoji: true
-                },
-                close: {
-                    type: "plain_text",
-                    text: "やめる",
-                    emoji: true
-                },
-                blocks: [
-                    {
-                        type: "section",
-                        text: {
-                            type: "mrkdwn",
-                            text: "*削除* してもよろしいですか？"
-                        }
-                    }
-                ]
-            }
+            view: appHome.getDeleteTaskConfirmView(body.actions[0].value)
         });
     } catch (error) {
         console.error(error);

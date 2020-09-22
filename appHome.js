@@ -7,10 +7,41 @@ exports.getAppHomeBlocks = async (userId, appObj) => {
 
     let blocks = [];
     blocks = blocks.concat(await createMyTaskBlocks(userId));
-    blocks = blocks.concat(await CreateRequestsBlocks(userId));
+    blocks = blocks.concat(await createRequestsBlocks(userId));
     return blocks;
 };
 
+exports.getDeleteTaskConfirmView = (metaData) => {
+    return {
+        type: "modal",
+        callback_id: "deleteTask",
+        private_metadata: metaData,
+        title: {
+            type: "plain_text",
+            text: "確認",
+            emoji: true
+        },
+        submit: {
+            type: "plain_text",
+            text: "削除する",
+            emoji: true
+        },
+        close: {
+            type: "plain_text",
+            text: "やめる",
+            emoji: true
+        },
+        blocks: [
+            {
+                type: "section",
+                text: {
+                    type: "mrkdwn",
+                    text: "*削除* してもよろしいですか？"
+                }
+            }
+        ]
+    };
+};
 const createMyTaskBlocks = async (userId) => {
     messages = store.getMyTask(userId);
 
@@ -35,7 +66,6 @@ const createMyTaskBlocks = async (userId) => {
         );
         userlist = store.getUsers();
     }
-    console.log(userlist);
     messages.forEach((message) => {
         block.push({
             type: "divider"
@@ -93,7 +123,7 @@ const createMyTaskBlocks = async (userId) => {
     return block;
 };
 
-const CreateRequestsBlocks = async (userId) => {
+const createRequestsBlocks = async (userId) => {
     const requests = store.getRequests(userId);
 
     let block = [
