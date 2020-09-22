@@ -51,6 +51,7 @@ class Store {
             this.users.push({ id: element.id, name: element.name });
         });
     }
+
     setStatus(messageId, userId, status) {
         const index = this.messageUserStore.findIndex(
             (mu) => mu.messageId == messageId && mu.userId == userId
@@ -58,6 +59,12 @@ class Store {
         if (index != -1) {
             this.messageUserStore[index].status = status;
         }
+    }
+
+    resetStatus(messageId) {
+        this.messageUserStore.forEach((element) => {
+            if (element.messageId == messageId) element.status = 0;
+        });
     }
 
     deleteMessage(messageId) {

@@ -26,6 +26,7 @@ const renderAppHomeView = async (userId, client) => {
         console.error(e);
     }
 };
+
 app.event("app_home_opened", async ({ body, client }) => {
     renderAppHomeView(body.event.user, client);
 });
@@ -35,9 +36,7 @@ app.action("deleteTaskConfirm", async ({ ack, body, client }) => {
 
     try {
         const result = await client.views.open({
-            // 適切な trigger_id を受け取ってから 3 秒以内に渡す
             trigger_id: body.trigger_id,
-            // view の値をペイロードに含む
             view: appHome.getDeleteTaskConfirmView(body.actions[0].value)
         });
     } catch (error) {
@@ -65,6 +64,7 @@ const applyReviewAction = async (messageId, userId, status, client) => {
 app.action("ok", async ({ ack, body, client }) => {
     try {
         await ack();
+
         applyReviewAction(body.actions[0].value, body.user.id, 1, client);
     } catch (error) {
         console.error(error);
@@ -74,7 +74,19 @@ app.action("ok", async ({ ack, body, client }) => {
 app.action("ng", async ({ ack, body, client }) => {
     try {
         await ack();
+
         applyReviewAction(body.actions[0].value, body.user.id, -1, client);
+    } catch (error) {
+        console.error(error);
+    }
+});
+
+app.action("reRequest", async ({ ack, body, client }) => {
+    try {
+        await ack();
+
+        store.resetStatus(body.actions[0].value);
+        renderAppHomeView(body.user.id, client);
     } catch (error) {
         console.error(error);
     }
