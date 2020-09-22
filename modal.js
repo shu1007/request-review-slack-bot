@@ -99,9 +99,8 @@ exports.getMessage = (title, body, fromUserStr, toUsersStr) => {
         {
             type: "section",
             text: {
-                type: "plain_text",
-                text: title,
-                emoji: true
+                type: "mrkdwn",
+                text: title
             }
         },
         {
@@ -110,9 +109,8 @@ exports.getMessage = (title, body, fromUserStr, toUsersStr) => {
         {
             type: "section",
             text: {
-                type: "plain_text",
-                text: body,
-                emoji: true
+                type: "mrkdwn",
+                text: body
             }
         }
     ];
