@@ -1,145 +1,79 @@
-const { App } = require('@slack/bolt');
-require('dotenv').config();
-const store = require('./store');
-let userlist = store.getUsers();
+const { App } = require("@slack/bolt");
+require("dotenv").config();
+const appHome = require("./appHome");
+
 const app = new App({
-  token: process.env.SLACK_BOT_TOKEN,
-  signingSecret: process.env.SLACK_SIGNING_SECRET
+    token: process.env.SLACK_BOT_TOKEN,
+    signingSecret: process.env.SLACK_SIGNING_SECRET
 });
 
-const createMyReviews = async (userId) => {
-  messages = store.getMyReviews(userId);
-  let block = [{
-    "type": "header",
-    "text": {
-      "type": "plain_text",
-      "text": "依頼しているもの",
-      "emoji": true
-    }
-  }];
-
-  if (userlist.length === 0) {
-    store.setUsers((await app.client.users.list({ token: process.env.SLACK_BOT_TOKEN })).members)
-    userlist = store.getUsers();
-  }
-  console.log(userlist);
-  messages.forEach(element => {
-    block.push({
-      "type": "divider"
-    });
-    block.push({
-      "type": "section",
-      "text": {
-        "type": "mrkdwn",
-        "text": element.message
-      },
-      "accessory": {
-        "type": "button",
-        "text": {
-          "type": "plain_text",
-          "text": "削除",
-          "emoji": true
-        },
-        "value": "delete"
-      }
-    })
-    const reviewers = store.getUsersFromMessageId(element.id);
-    block.push(
-      {
-        "type": "section",
-        "text": {
-          "type": "mrkdwn",
-          "text": reviewers.map(reviewer => {
-            return `- ${userlist.find(user => user.id == reviewer.userId).name} : ${reviewer.checkFlg ? ":ok:" : ":ng:"}`
-          }).join('\n')
-        }
-      });
-  });
-  return block;
-}
-
-const createMyRequested = async (userId) => {
-  const requests = store.getMyRequests(userId);
-
-  let block = [{
-    "type": "divider"
-  },
-  {
-    "type": "header",
-    "text": {
-      "type": "plain_text",
-      "text": "依頼されているもの",
-      "emoji": true
-    }
-  }];
-  if (userlist.length === 0) {
-    store.setUsers((await app.client.users.list({ token: process.env.SLACK_BOT_TOKEN })).members)
-    userlist = store.getUsers();
-  }
-  requests.forEach(element => {
-    block.push({
-      "type": "divider"
-    });
-    block.push({
-      "type": "section",
-      "text": {
-        "type": "mrkdwn",
-        "text": element.message
-      },
-      "accessory": {
-        "type": "button",
-        "text": {
-          "type": "plain_text",
-          "text": "OK",
-          "emoji": true
-        },
-        "value": "delete"
-      }
-    })
-    block.push({
-			"type": "context",
-			"elements": [
-				{
-					"type": "plain_text",
-					"text": `依頼者: ${userlist.find(user => user.id === element.userid).name}`,
-					"emoji": true
-				}
-			]
-		});
-  });
-  return block;
-}
-
-let cache = [];
-app.action('hoge')
-app.command('/rmd', async ({ command, ack, say }) => {
-  // コマンドリクエストを確認
-  await ack();
-  command.user_id
-  await say(`${command.text}`);
-});
 (async () => {
-  await app.start(process.env.PORT || 3000);
+    await app.start(process.env.PORT || 3000);
 })();
 
+app.event("app_home_opened", async ({ ack, body, client }) => {
+    try {
+        console.log(body.event.user);
+        let userid = body.event.user;
+        let blocks = await appHome.getAppHomeBlocks(userid, app);
+        console.log(blocks);
+        client.views.publish({
+            user_id: body.event.user,
+            view: {
+                type: "home",
+                blocks: blocks
+            }
+        });
+    } catch (e) {
+        console.error(e);
+    }
+});
 
-app.event('app_home_opened', async ({ ack, body, client }) => {
-  try {
-    console.log(body.event.user)
-    client.users.list()
-    let userid = body.event.user;
-    let blocks = [
+app.action("deleteTaskConfirm", async ({ ack, body, client }) => {
+    await ack();
+    try {
+        const result = await client.views.open({
+            // 適切な trigger_id を受け取ってから 3 秒以内に渡す
+            trigger_id: body.trigger_id,
+            // view の値をペイロードに含む
+            view: {
+                type: "modal",
+                callback_id: "deleteTask",
+                private_metadata: body.actions[0].value,
+                title: {
+                    type: "plain_text",
+                    text: "確認",
+                    emoji: true
+                },
+                submit: {
+                    type: "plain_text",
+                    text: "削除する",
+                    emoji: true
+                },
+                close: {
+                    type: "plain_text",
+                    text: "やめる",
+                    emoji: true
+                },
+                blocks: [
+                    {
+                        type: "section",
+                        text: {
+                            type: "mrkdwn",
+                            text: "*削除* してもよろしいですか？"
+                        }
+                    }
+                ]
+            }
+        });
+    } catch (error) {
+        console.error(error);
+    }
+});
 
-    ];
-    blocks = blocks.concat(await createMyReviews(userid));
-    blocks = blocks.concat(await createMyRequested(userid));
-    console.log(blocks);
-    client.views.publish({
-      user_id: body.event.user,
-      view: {
-        "type": "home",
-        "blocks": blocks
-      }
-    })
-  } catch (e) { console.error(e); }
+app.view("deleteTask", async ({ ack, body, client }) => {
+    // モーダルでのデータ送信イベントを確認
+    await ack();
+
+    console.log("delete Task No is " + body.view.private_metadata);
 });
