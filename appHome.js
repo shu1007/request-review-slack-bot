@@ -74,7 +74,7 @@ const createMyTaskBlocks = async (userId) => {
             type: "section",
             text: {
                 type: "mrkdwn",
-                text: message.message
+                text: message.title
             }
         });
         block.push(createMessageLinkBlock(message.url));
@@ -163,7 +163,7 @@ const createRequestsBlocks = async (userId) => {
             type: "section",
             text: {
                 type: "mrkdwn",
-                text: message.message
+                text: message.title
             }
         });
 

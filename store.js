@@ -3,14 +3,14 @@ class Store {
         {
             id: 1,
             userid: "U0190R4L6JH",
-            message:
-                "hogehogehogehogehoeghoge\n https://app.slack.com/client/T01926N9N66/D01AD7T0HQE/app",
+            title:
+                "foobaafoobaa\n https://app.slack.com/client/T01926N9N66/D01AD7T0HQE/app",
             url: "https://google.com"
         },
         {
             id: 2,
             userid: "U0190R4L6JH",
-            message: "please reviewplease reviewplease reviewplease review",
+            title: "please reviewplease reviewplease reviewplease review",
             url: "https://google.com"
         }
     ];
@@ -64,6 +64,27 @@ class Store {
     resetStatus(messageId) {
         this.messageUserStore.forEach((element) => {
             if (element.messageId == messageId) element.status = 0;
+        });
+    }
+
+    setMessage(title, userId, url) {
+        const id = Math.floor(Math.random() * 10000);
+        this.messageStore.push({
+            id: id,
+            userid: userId,
+            title: title,
+            url: url
+        });
+        return id;
+    }
+
+    setMessageUsers(messageId, userIds) {
+        userIds.forEach((uid) => {
+            this.messageUserStore.push({
+                messageId: messageId,
+                userId: uid,
+                status: 0
+            });
         });
     }
 
