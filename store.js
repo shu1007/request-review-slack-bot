@@ -15,43 +15,57 @@ class Store {
         }
     ];
     messageUserStore = [
-        { messageId: 1, userId: "U0190R4L6JH", checkFlg: false },
-        { messageId: 1, userId: "U0190R4L6JH", checkFlg: false },
-        { messageId: 2, userId: "U0190R4L6JH", checkFlg: true }
+        { messageId: 1, userId: "U0190R4L6JH", status: 0 },
+        { messageId: 2, userId: "U0190R4L6JH", status: 1 }
     ];
     users = [];
 
     constructor() {}
 
-    getMyTask = function (userid) {
+    getMyMessage(userid) {
         return this.messageStore.filter((message) => message.userid === userid);
-    };
+    }
 
-    getRequests = function (userId) {
+    getRequests(userId) {
         return this.messageStore.filter((message) =>
             this.messageUserStore.find(
                 (mu) =>
                     mu.messageId === message.id &&
                     mu.userId === userId &&
-                    !mu.checkFlg
+                    mu.status === 0
             )
         );
-    };
+    }
 
-    getUsersFromMessageId = (messageId) => {
-        return this.messageStore.filter((mu) => mu.messageId == messageId);
-    };
+    getUsersFromMessageId(messageId) {
+        return this.messageUserStore.filter((mu) => mu.messageId == messageId);
+    }
 
-    getUsers = () => {
+    getUsers() {
         return this.users;
-    };
+    }
 
-    setUsers = (gotMembers) => {
+    setUsers(gotMembers) {
         this.users = [];
         gotMembers.forEach((element) => {
             this.users.push({ id: element.id, name: element.name });
         });
-    };
+    }
+    setStatus(messageId, userId, status) {
+        const index = this.messageUserStore.findIndex(
+            (mu) => mu.messageId == messageId && mu.userId == userId
+        );
+        if (index != -1) {
+            this.messageUserStore[index].status = status;
+        }
+    }
+
+    deleteMessage(messageId) {
+        this.messageStore = this.messageStore.filter((m) => m.id != messageId);
+        this.messageUserStore = this.messageUserStore.filter(
+            (mu) => mu.messageId != messageId
+        );
+    }
 }
 
 module.exports = new Store();

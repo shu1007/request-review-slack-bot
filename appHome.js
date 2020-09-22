@@ -43,7 +43,7 @@ exports.getDeleteTaskConfirmView = (metaData) => {
     };
 };
 const createMyTaskBlocks = async (userId) => {
-    messages = store.getMyTask(userId);
+    messages = store.getMyMessage(userId);
 
     let block = [
         {
@@ -89,7 +89,13 @@ const createMyTaskBlocks = async (userId) => {
                         return `● <@${
                             userlist.find((user) => user.id == reviewer.userId)
                                 .name
-                        }> : ${reviewer.checkFlg ? ":ok:" : ":ng:"}`;
+                        }> : ${
+                            reviewer.status == 1
+                                ? ":ok:"
+                                : reviewer.status == 0
+                                ? ":eyes:"
+                                : ":ng:"
+                        }`;
                     })
                     .join("\n")
             }
@@ -158,34 +164,9 @@ const createRequestsBlocks = async (userId) => {
             text: {
                 type: "mrkdwn",
                 text: message.message
-            },
-            accessory: {
-                type: "static_select",
-                placeholder: {
-                    type: "plain_text",
-                    text: "Select an item",
-                    emoji: true
-                },
-                options: [
-                    {
-                        text: {
-                            type: "plain_text",
-                            text: "OK :OK:",
-                            emoji: true
-                        },
-                        value: "value-0"
-                    },
-                    {
-                        text: {
-                            type: "plain_text",
-                            text: "NG :NG:",
-                            emoji: true
-                        },
-                        value: "value-1"
-                    }
-                ]
             }
         });
+
         block.push(createMessageLinkBlock(message.url));
         block.push({
             type: "context",
@@ -196,6 +177,33 @@ const createRequestsBlocks = async (userId) => {
                         userlist.find((user) => user.id === message.userid).name
                     }>`,
                     emoji: true
+                }
+            ]
+        });
+        block.push({
+            type: "actions",
+            elements: [
+                {
+                    type: "button",
+                    action_id: "ok",
+                    text: {
+                        type: "plain_text",
+                        emoji: true,
+                        text: "OK"
+                    },
+                    style: "primary",
+                    value: `${message.id}`
+                },
+                {
+                    type: "button",
+                    action_id: "ng",
+                    text: {
+                        type: "plain_text",
+                        emoji: true,
+                        text: "NG"
+                    },
+                    style: "danger",
+                    value: `${message.id}`
                 }
             ]
         });

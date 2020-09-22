@@ -1,6 +1,7 @@
 const { App } = require("@slack/bolt");
 require("dotenv").config();
 const appHome = require("./appHome");
+const store = require("./store");
 
 const app = new App({
     token: process.env.SLACK_BOT_TOKEN,
@@ -45,8 +46,34 @@ app.action("deleteTaskConfirm", async ({ ack, body, client }) => {
 });
 
 app.view("deleteTask", async ({ ack, body, client }) => {
-    // モーダルでのデータ送信イベントを確認
-    await ack();
+    try {
+        await ack();
 
-    console.log("delete Task No is " + body.view.private_metadata);
+        store.deleteMessage(body.view.private_metadata);
+        console.log("delete Task No is " + body.view.private_metadata);
+    } catch (error) {
+        console.error(error);
+    }
+});
+
+app.action("ok", async ({ ack, body, client }) => {
+    try {
+        await ack();
+
+        console.log(body.actions);
+        store.setStatus(body.actions[0].value, body.user.id, 1);
+    } catch (error) {
+        console.error(error);
+    }
+});
+
+app.action("ng", async ({ ack, body, client }) => {
+    try {
+        await ack();
+
+        console.log(body.actions);
+        store.setStatus(body.actions[0].value, body.user.id, -1);
+    } catch (error) {
+        console.error(error);
+    }
 });
