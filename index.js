@@ -12,14 +12,11 @@ const app = new App({
     await app.start(process.env.PORT || 3000);
 })();
 
-app.event("app_home_opened", async ({ ack, body, client }) => {
+const renderAppHomeView = async (userId, client) => {
     try {
-        console.log(body.event.user);
-        let userid = body.event.user;
-        let blocks = await appHome.getAppHomeBlocks(userid, app);
-        console.log(blocks);
+        let blocks = await appHome.getAppHomeBlocks(userId, app);
         client.views.publish({
-            user_id: body.event.user,
+            user_id: userId,
             view: {
                 type: "home",
                 blocks: blocks
@@ -28,6 +25,9 @@ app.event("app_home_opened", async ({ ack, body, client }) => {
     } catch (e) {
         console.error(e);
     }
+};
+app.event("app_home_opened", async ({ body, client }) => {
+    renderAppHomeView(body.event.user, client);
 });
 
 app.action("deleteTaskConfirm", async ({ ack, body, client }) => {
@@ -51,17 +51,21 @@ app.view("deleteTask", async ({ ack, body, client }) => {
 
         store.deleteMessage(body.view.private_metadata);
         console.log("delete Task No is " + body.view.private_metadata);
+        renderAppHomeView(body.user.id, client);
     } catch (error) {
         console.error(error);
     }
 });
 
+const applyReviewAction = async (messageId, userId, status, client) => {
+    store.setStatus(messageId, userId, status);
+    renderAppHomeView(userId, client);
+};
+
 app.action("ok", async ({ ack, body, client }) => {
     try {
         await ack();
-
-        console.log(body.actions);
-        store.setStatus(body.actions[0].value, body.user.id, 1);
+        applyReviewAction(body.actions[0].value, body.user.id, 1, client);
     } catch (error) {
         console.error(error);
     }
@@ -70,9 +74,7 @@ app.action("ok", async ({ ack, body, client }) => {
 app.action("ng", async ({ ack, body, client }) => {
     try {
         await ack();
-
-        console.log(body.actions);
-        store.setStatus(body.actions[0].value, body.user.id, -1);
+        applyReviewAction(body.actions[0].value, body.user.id, -1, client);
     } catch (error) {
         console.error(error);
     }
