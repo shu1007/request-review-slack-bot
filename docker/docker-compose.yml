@@ -1,0 +1,16 @@
+version: "3"
+services:
+    postgres:
+        image: postgres:10-alpine
+        # 任意のパスワード
+        environment:
+            POSTGRES_USER: admin
+            POSTGRES_PASSWORD: admin
+            POSTGRES_DB: app
+        # ホスト側は任意のディレクトリ
+        volumes:
+            - ./pgsql-data:/var/lib/postgresql/data
+            - ./init:/docker-entrypoint-initdb.d
+        # ホスト側は任意のポート
+        ports:
+            - 5432:5432
