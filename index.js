@@ -161,7 +161,7 @@ app.view("submitRequest", async ({ ack, body, view, client, context }) => {
         ).permalink;
 
         console.log(messageUrl);
-        const messageId = store.setMessage(title, myUserId, messageUrl);
+        const messageId = await store.setMessage(title, myUserId, messageUrl);
         store.setMessageUsers(messageId, userIds);
     } catch (e) {
         console.error(e);

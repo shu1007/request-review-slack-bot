@@ -1,3 +1,4 @@
+const db = require("./db");
 class Store {
     messageStore = [
         {
@@ -20,7 +21,29 @@ class Store {
     ];
     users = [];
 
-    constructor() {}
+    constructor() {
+        db.getAllMessages().then((retval) => {
+            this.messageStore = [];
+            retval.forEach((val) =>
+                this.messageStore.push({
+                    id: val.id,
+                    userid: val.user_id,
+                    title: val.title,
+                    url: val.url
+                })
+            );
+        });
+        db.getAllMessageUsers().then((retval) => {
+            this.messageUserStore = [];
+            retval.forEach((val) =>
+                this.messageUserStore.push({
+                    messageId: val.message_id,
+                    userId: val.user_id,
+                    status: val.status
+                })
+            );
+        });
+    }
 
     getMyMessage(userid) {
         return this.messageStore.filter((message) => message.userid === userid);
@@ -67,8 +90,8 @@ class Store {
         });
     }
 
-    setMessage(title, userId, url) {
-        const id = Math.floor(Math.random() * 10000);
+    async setMessage(title, userId, url) {
+        const id = await db.insertMessages(title, userId, url);
         this.messageStore.push({
             id: id,
             userid: userId,
@@ -78,8 +101,10 @@ class Store {
         return id;
     }
 
-    setMessageUsers(messageId, userIds) {
-        userIds.forEach((uid) => {
+    async setMessageUsers(messageId, userIds) {
+        userIds.forEach(async (uid) => {
+            await db.insertMessageUser(messageId, uid);
+
             this.messageUserStore.push({
                 messageId: messageId,
                 userId: uid,
@@ -88,7 +113,9 @@ class Store {
         });
     }
 
-    deleteMessage(messageId) {
+    async deleteMessage(messageId) {
+        await db.deleteMesseges(messageId);
+
         this.messageStore = this.messageStore.filter((m) => m.id != messageId);
         this.messageUserStore = this.messageUserStore.filter(
             (mu) => mu.messageId != messageId
