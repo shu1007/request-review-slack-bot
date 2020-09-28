@@ -1,16 +1,17 @@
 {
-  "name": "request-review-slack-bot",
-  "version": "0.0.1",
-  "description": "Request review and manage reviews. ",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "",
-  "license": "MIT",
-  "dependencies": {
-    "@slack/bolt": "^2.3.0",
-    "dotenv": "^8.2.0",
-    "pg": "^8.3.3"
-  }
+    "name": "request-review-slack-bot",
+    "version": "0.0.1",
+    "description": "Request review and manage reviews. ",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "node index.js"
+    },
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "@slack/bolt": "^2.3.0",
+        "dotenv": "^8.2.0",
+        "pg": "^8.3.3"
+    }
 }
