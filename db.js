@@ -18,40 +18,55 @@ exports.getAllMessageUsers = async () => {
 };
 
 exports.insertMessages = async (title, userId, url) => {
-    const result = await pool
-        .query({
-            text:
-                "insert into messages (user_id, title, url) values ($1, $2, $3) returning id;",
-            values: [userId, title, url]
-        })
-        .catch(console.error);
+    const result = await executeWithTransaction(
+        "insert into messages (user_id, title, url) values ($1, $2, $3) returning id;",
+        [userId, title, url]
+    );
 
     return result.rows[0].id;
 };
 
 exports.insertMessageUser = async (messageId, userId) => {
-    pool.query({
-        text:
-            "insert into messageUsers (message_id, user_id, status) values ($1, $2, $3);",
-        values: [messageId, userId, 0]
-    }).catch((e) => {
-        console.log("messageUser error");
-        console.error(e);
-    });
+    await executeWithTransaction(
+        "insert into messageUsers (message_id, user_id, status) values ($1, $2, $3);",
+        [messageId, userId, 0]
+    );
+};
+
+exports.setStatus = async (messageId, userId, status) => {
+    await executeWithTransaction(
+        "update messageUsers set status = $1 where message_id = $2 and user_id = $3",
+        [status, messageId, userId]
+    );
+};
+exports.resetStatus = async (messageId) => {
+    await executeWithTransaction(
+        "update messageUsers set status = $1 where message_id = $2 and status = $3;",
+        [0, messageId, -1]
+    );
 };
 
 exports.deleteMesseges = async (messageId) => {
-    await pool
-        .query({
-            text: "delete from messages where id = $1;",
-            values: [messageId]
-        })
-        .catch(console.error);
+    await executeWithTransaction("delete from messages where id = $1;", [
+        messageId
+    ]);
+    await executeWithTransaction(
+        "delete from messageUsers where message_id = $1;",
+        [messageId]
+    );
+};
 
-    await pool
-        .query({
-            text: "delete from messageUsers where message_id = $1;",
-            values: [messageId]
-        })
-        .catch(console.error);
+executeWithTransaction = async (sql, params) => {
+    const client = await pool.connect();
+    try {
+        await client.query("BEGIN");
+        const result = await client.query(sql, params);
+        await client.query("COMMIT");
+        return result;
+    } catch (e) {
+        await client.query("ROLLBACK");
+        throw e;
+    } finally {
+        client.release();
+    }
 };
