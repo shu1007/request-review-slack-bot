@@ -75,8 +75,8 @@ class Store {
         });
     }
 
-    setStatus(messageId, userId, status) {
-        await db.setStatus(messageId, userId, status)
+    async setStatus(messageId, userId, status) {
+        await db.setStatus(messageId, userId, status);
 
         const index = this.messageUserStore.findIndex(
             (mu) => mu.messageId == messageId && mu.userId == userId
@@ -88,7 +88,7 @@ class Store {
 
     async resetStatus(messageId) {
         await db.resetStatus(messageId);
-        
+
         this.messageUserStore.forEach((element) => {
             if (element.messageId == messageId && element.status == -1)
                 element.status = 0;

@@ -11,12 +11,12 @@ const app = new App({
 
 (async () => {
     await app.start(process.env.PORT || 3000);
+    console.log("Start app.");
 })();
 
 const renderAppHomeView = async (userId, client) => {
     try {
         const blocks = await appHome.getAppHomeBlocks(userId, app);
-        console.log(blocks);
         client.views.publish({
             user_id: userId,
             view: {
@@ -52,7 +52,6 @@ app.view("deleteTask", async ({ ack, body, client }) => {
         await ack();
 
         store.deleteMessage(body.view.private_metadata);
-        console.log("delete Task No is " + body.view.private_metadata);
         renderAppHomeView(body.user.id, client);
     } catch (error) {
         console.error(error);
@@ -66,7 +65,6 @@ const applyReviewAction = async (messageId, userId, status, client) => {
 
 app.action("ok", async ({ ack, body, client }) => {
     try {
-        console.log("ok");
         await ack();
 
         applyReviewAction(body.actions[0].value, body.user.id, 1, client);
@@ -112,7 +110,6 @@ app.command("/req", async ({ ack, body, client }) => {
 app.view("submitRequest", async ({ ack, body, view, client, context }) => {
     try {
         await ack();
-        console.log(view.private_metadata);
         let userList = store.getUsers();
         if (userList.length === 0) {
             store.setUsers(
@@ -160,7 +157,6 @@ app.view("submitRequest", async ({ ack, body, view, client, context }) => {
             })
         ).permalink;
 
-        console.log(messageUrl);
         const messageId = await store.setMessage(title, myUserId, messageUrl);
         store.setMessageUsers(messageId, userIds);
     } catch (e) {
