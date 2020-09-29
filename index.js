@@ -31,7 +31,7 @@ const renderAppHomeView = async (userId, client) => {
 
 app.event("app_home_opened", async ({ body, client }) => {
     console.log("appHome");
-    renderAppHomeView(body.event.user, client);
+    await renderAppHomeView(body.event.user, client);
 });
 
 app.action("deleteTaskConfirm", async ({ ack, body, client }) => {
@@ -51,23 +51,23 @@ app.view("deleteTask", async ({ ack, body, client }) => {
     try {
         await ack();
 
-        store.deleteMessage(body.view.private_metadata);
-        renderAppHomeView(body.user.id, client);
+        await store.deleteMessage(body.view.private_metadata);
+        await renderAppHomeView(body.user.id, client);
     } catch (error) {
         console.error(error);
     }
 });
 
 const applyReviewAction = async (messageId, userId, status, client) => {
-    store.setStatus(messageId, userId, status);
-    renderAppHomeView(userId, client);
+    await store.setStatus(messageId, userId, status);
+    await renderAppHomeView(userId, client);
 };
 
 app.action("ok", async ({ ack, body, client }) => {
     try {
         await ack();
 
-        applyReviewAction(body.actions[0].value, body.user.id, 1, client);
+        await applyReviewAction(body.actions[0].value, body.user.id, 1, client);
     } catch (error) {
         console.error(error);
     }
@@ -77,7 +77,12 @@ app.action("ng", async ({ ack, body, client }) => {
     try {
         await ack();
 
-        applyReviewAction(body.actions[0].value, body.user.id, -1, client);
+        await applyReviewAction(
+            body.actions[0].value,
+            body.user.id,
+            -1,
+            client
+        );
     } catch (error) {
         console.error(error);
     }
@@ -87,8 +92,8 @@ app.action("reRequest", async ({ ack, body, client }) => {
     try {
         await ack();
 
-        store.resetStatus(body.actions[0].value);
-        renderAppHomeView(body.user.id, client);
+        await store.resetStatus(body.actions[0].value);
+        await renderAppHomeView(body.user.id, client);
     } catch (error) {
         console.error(error);
     }
