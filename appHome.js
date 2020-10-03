@@ -1,5 +1,5 @@
 const store = require("./store");
-let userlist = store.getUsers();
+const Users = require("./user");
 let app;
 
 exports.getAppHomeBlocks = async (userId, appObj) => {
@@ -56,76 +56,69 @@ const createMyTaskBlocks = async (userId) => {
         }
     ];
 
-    if (userlist.length === 0) {
-        store.setUsers(
-            (
-                await app.client.users.list({
-                    token: process.env.SLACK_BOT_TOKEN
-                })
-            ).members
-        );
-        userlist = store.getUsers();
-    }
-    messages.forEach((message) => {
-        block.push({
-            type: "divider"
-        });
-        block.push({
-            type: "section",
-            text: {
-                type: "mrkdwn",
-                text: message.title
-            }
-        });
-        block.push(createMessageLinkBlock(message.url));
-
-        const reviewers = store.getUsersFromMessageId(message.id);
-        block.push({
-            type: "section",
-            text: {
-                type: "mrkdwn",
-                text: reviewers
-                    .map((reviewer) => {
-                        return `● <@${
-                            userlist.find((user) => user.id == reviewer.userId)
-                                .name
-                        }> : ${
-                            reviewer.status == 1
-                                ? ":ok:"
-                                : reviewer.status == 0
-                                ? ":eyes:"
-                                : ":ng:"
-                        }`;
-                    })
-                    .join("\n")
-            }
-        });
-        block.push({
-            type: "actions",
-            elements: [
-                {
-                    type: "button",
-                    action_id: "reRequest",
-                    text: {
-                        type: "plain_text",
-                        text: "再レビュー",
-                        emoji: true
-                    },
-                    value: `${message.id}`
-                },
-                {
-                    type: "button",
-                    action_id: "deleteTaskConfirm",
-                    text: {
-                        type: "plain_text",
-                        text: "削除",
-                        emoji: true
-                    },
-                    value: `${message.id}`
+    await Promise.all(
+        messages.forEach(async (message) => {
+            block.push({
+                type: "divider"
+            });
+            block.push({
+                type: "section",
+                text: {
+                    type: "mrkdwn",
+                    text: message.title
                 }
-            ]
-        });
-    });
+            });
+            block.push(createMessageLinkBlock(message.url));
+
+            const reviewers = store.getUsersFromMessageId(message.id);
+            const text = await Promise.all(
+                reviewers.map(async (reviewer) => {
+                    return `● <@${await Users.getUserName(
+                        reviewer.userId
+                    )}> : ${
+                        reviewer.status == 1
+                            ? ":ok:"
+                            : reviewer.status == 0
+                            ? ":eyes:"
+                            : ":ng:"
+                    }`;
+                })
+            );
+            block.push({
+                type: "section",
+                text: {
+                    type: "mrkdwn",
+                    text: text.join("\n")
+                }
+            });
+            block.push({
+                type: "actions",
+                elements: [
+                    {
+                        type: "button",
+                        action_id: "reRequest",
+                        text: {
+                            type: "plain_text",
+                            text: "再レビュー",
+                            emoji: true
+                        },
+                        value: `${message.id}`
+                    },
+                    {
+                        type: "button",
+                        action_id: "deleteTaskConfirm",
+                        text: {
+                            type: "plain_text",
+                            text: "削除",
+                            emoji: true
+                        },
+                        value: `${message.id}`
+                    }
+                ]
+            });
+        })
+    );
+
     return block;
 };
 
@@ -145,69 +138,60 @@ const createRequestsBlocks = async (userId) => {
             }
         }
     ];
-    if (userlist.length === 0) {
-        store.setUsers(
-            (
-                await app.client.users.list({
-                    token: process.env.SLACK_BOT_TOKEN
-                })
-            ).members
-        );
-        userlist = store.getUsers();
-    }
-    requests.forEach((message) => {
-        block.push({
-            type: "divider"
-        });
-        block.push({
-            type: "section",
-            text: {
-                type: "mrkdwn",
-                text: message.title
-            }
-        });
+    await Promise.all(
+        requests.forEach(async (message) => {
+            block.push({
+                type: "divider"
+            });
+            block.push({
+                type: "section",
+                text: {
+                    type: "mrkdwn",
+                    text: message.title
+                }
+            });
 
-        block.push(createMessageLinkBlock(message.url));
-        block.push({
-            type: "context",
-            elements: [
-                {
-                    type: "plain_text",
-                    text: `依頼者: <@${
-                        userlist.find((user) => user.id === message.userid).name
-                    }>`,
-                    emoji: true
-                }
-            ]
-        });
-        block.push({
-            type: "actions",
-            elements: [
-                {
-                    type: "button",
-                    action_id: "ok",
-                    text: {
+            block.push(createMessageLinkBlock(message.url));
+            const userName = await Users.getUserName(message.userid);
+            block.push({
+                type: "context",
+                elements: [
+                    {
                         type: "plain_text",
-                        emoji: true,
-                        text: "OK"
+                        text: `依頼者: <@${userName}>`,
+                        emoji: true
+                    }
+                ]
+            });
+            block.push({
+                type: "actions",
+                elements: [
+                    {
+                        type: "button",
+                        action_id: "ok",
+                        text: {
+                            type: "plain_text",
+                            emoji: true,
+                            text: "OK"
+                        },
+                        style: "primary",
+                        value: `${message.id}`
                     },
-                    style: "primary",
-                    value: `${message.id}`
-                },
-                {
-                    type: "button",
-                    action_id: "ng",
-                    text: {
-                        type: "plain_text",
-                        emoji: true,
-                        text: "NG"
-                    },
-                    style: "danger",
-                    value: `${message.id}`
-                }
-            ]
-        });
-    });
+                    {
+                        type: "button",
+                        action_id: "ng",
+                        text: {
+                            type: "plain_text",
+                            emoji: true,
+                            text: "NG"
+                        },
+                        style: "danger",
+                        value: `${message.id}`
+                    }
+                ]
+            });
+        })
+    );
     return block;
 };
 

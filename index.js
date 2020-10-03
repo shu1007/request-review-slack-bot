@@ -3,6 +3,7 @@ require("dotenv").config();
 const appHome = require("./appHome");
 const modal = require("./modal");
 const store = require("./store");
+const Users = require("./user");
 
 const app = new App({
     token: process.env.SLACK_BOT_TOKEN,
@@ -115,29 +116,20 @@ app.command("/req", async ({ ack, body, client }) => {
 app.view("submitRequest", async ({ ack, body, view, client, context }) => {
     try {
         await ack();
-        let userList = store.getUsers();
-        if (userList.length === 0) {
-            store.setUsers(
-                (
-                    await app.client.users.list({
-                        token: process.env.SLACK_BOT_TOKEN
-                    })
-                ).members
-            );
-            userList = store.getUsers();
-        }
 
         const values = view.state.values;
         const title = values.title.title.value;
         const userIds = values.users.users.selected_users;
 
-        const userNames = userIds
-            .map((uid) => {
-                return `<@${userList.find((u) => u.id == uid).name}>`;
-            })
-            .join(" ");
+        const userNames = (
+            await Promise.all(
+                userIds.map(async (uid) => {
+                    return `<@${await Users.getUserName(uid)}>`;
+                })
+            )
+        ).join(" ");
         const myUserId = body.user.id;
-        const myName = `<@${userList.find((u) => u.id == myUserId).name}>`;
+        const myName = `<@${await Users.getUserName(myUserId)}>`;
 
         const channelId = view.private_metadata;
         const messageTs = (
