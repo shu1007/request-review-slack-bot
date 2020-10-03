@@ -57,7 +57,7 @@ const createMyTaskBlocks = async (userId) => {
     ];
 
     await Promise.all(
-        messages.forEach(async (message) => {
+        messages.map(async (message) => {
             block.push({
                 type: "divider"
             });
@@ -139,7 +139,7 @@ const createRequestsBlocks = async (userId) => {
         }
     ];
     await Promise.all(
-        requests.forEach(async (message) => {
+        requests.map(async (message) => {
             block.push({
                 type: "divider"
             });
