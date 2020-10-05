@@ -58,17 +58,18 @@ const createMyTaskBlocks = async (userId) => {
 
     await Promise.all(
         messages.map(async (message) => {
-            block.push({
+            const tmpBlock = [];
+            tmpBlock.push({
                 type: "divider"
             });
-            block.push({
+            tmpBlock.push({
                 type: "section",
                 text: {
                     type: "mrkdwn",
                     text: message.title
                 }
             });
-            block.push(createMessageLinkBlock(message.url));
+            tmpBlock.push(createMessageLinkBlock(message.url));
 
             const reviewers = store.getUsersFromMessageId(message.id);
             const text = await Promise.all(
@@ -84,14 +85,14 @@ const createMyTaskBlocks = async (userId) => {
                     }`;
                 })
             );
-            block.push({
+            tmpBlock.push({
                 type: "section",
                 text: {
                     type: "mrkdwn",
                     text: text.join("\n")
                 }
             });
-            block.push({
+            tmpBlock.push({
                 type: "actions",
                 elements: [
                     {
@@ -116,6 +117,8 @@ const createMyTaskBlocks = async (userId) => {
                     }
                 ]
             });
+
+            block = block.concat(tmpBlock);
         })
     );
 
@@ -140,10 +143,11 @@ const createRequestsBlocks = async (userId) => {
     ];
     await Promise.all(
         requests.map(async (message) => {
-            block.push({
+            const tmpBlock = [];
+            tmpBlock.push({
                 type: "divider"
             });
-            block.push({
+            tmpBlock.push({
                 type: "section",
                 text: {
                     type: "mrkdwn",
@@ -151,9 +155,9 @@ const createRequestsBlocks = async (userId) => {
                 }
             });
 
-            block.push(createMessageLinkBlock(message.url));
+            tmpBlock.push(createMessageLinkBlock(message.url));
             const userName = await Users.getUserName(message.userid);
-            block.push({
+            tmpBlock.push({
                 type: "context",
                 elements: [
                     {
@@ -163,7 +167,7 @@ const createRequestsBlocks = async (userId) => {
                     }
                 ]
             });
-            block.push({
+            tmpBlock.push({
                 type: "actions",
                 elements: [
                     {
@@ -190,6 +194,7 @@ const createRequestsBlocks = async (userId) => {
                     }
                 ]
             });
+            block = block.concat(tmpBlock);
         })
     );
     return block;
