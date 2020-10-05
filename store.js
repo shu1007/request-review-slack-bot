@@ -19,7 +19,6 @@ class Store {
         { messageId: 1, userId: "U0190R4L6JH", status: 0 },
         { messageId: 2, userId: "U0190R4L6JH", status: 1 }
     ];
-    users = [];
 
     constructor() {
         db.getAllMessages().then((retval) => {
@@ -62,17 +61,6 @@ class Store {
 
     getUsersFromMessageId(messageId) {
         return this.messageUserStore.filter((mu) => mu.messageId == messageId);
-    }
-
-    getUsers() {
-        return this.users;
-    }
-
-    setUsers(gotMembers) {
-        this.users = [];
-        gotMembers.forEach((element) => {
-            this.users.push({ id: element.id, name: element.name });
-        });
     }
 
     async setStatus(messageId, userId, status) {
