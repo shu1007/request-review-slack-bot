@@ -148,7 +148,6 @@ app.view("submitRequest", async ({ ack, body, view, client, context }) => {
         const userIds = values.users.users.selected_users;
 
         const myUserId = body.user.id;
-        const myName = `<@${await Users.getUserName(myUserId)}>`;
 
         const channelId = view.private_metadata;
         const messageTs = (
@@ -159,7 +158,7 @@ app.view("submitRequest", async ({ ack, body, view, client, context }) => {
                 blocks: modal.getMessage(
                     title,
                     values.body.body.value,
-                    myName,
+                    `<@${myUserId}>`,
                     userIds
                         .map((uid) => {
                             return `<@${uid}>`;

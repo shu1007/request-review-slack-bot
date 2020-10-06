@@ -81,9 +81,8 @@ exports.getMessage = (title, body, fromUserStr, toUsersStr) => {
         {
             type: "section",
             text: {
-                type: "plain_text",
-                text: `From : ${fromUserStr}`,
-                emoji: true
+                type: "mrkdwn",
+                text: `From : ${fromUserStr}`
             }
         },
         {
