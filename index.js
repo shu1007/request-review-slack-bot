@@ -68,7 +68,33 @@ app.action("ok", async ({ ack, body, client }) => {
     try {
         await ack();
 
-        await applyReviewAction(body.actions[0].value, body.user.id, 1, client);
+        const messageId = body.actions[0].value;
+        const userId = body.user.id;
+        await applyReviewAction(messageId, userId, 1, client);
+        const message = store.getMessage(messageId);
+        if (
+            message != undefined &&
+            message.messageTs != null &&
+            message.channelId != null
+        ) {
+            const userName = await Users.getUserName(userId);
+            await app.client.chat.postMessage({
+                token: process.env.SLACK_BOT_TOKEN,
+                channel: message.channelId,
+                text: "text",
+                thread_ts: message.messageTs,
+                blocks: [
+                    {
+                        type: "section",
+                        text: {
+                            type: "plain_text",
+                            text: `LGTM! from <@${userName}>`,
+                            emoji: true
+                        }
+                    }
+                ]
+            });
+        }
     } catch (error) {
         console.error(error);
     }
@@ -151,7 +177,13 @@ app.view("submitRequest", async ({ ack, body, view, client, context }) => {
             })
         ).permalink;
 
-        const messageId = await store.setMessage(title, myUserId, messageUrl);
+        const messageId = await store.setMessage(
+            title,
+            myUserId,
+            messageUrl,
+            channelId,
+            messageTs
+        );
         store.setMessageUsers(messageId, userIds);
     } catch (e) {
         console.error(e);

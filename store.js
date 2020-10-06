@@ -1,24 +1,7 @@
 const db = require("./db");
 class Store {
-    messageStore = [
-        {
-            id: 1,
-            userid: "U0190R4L6JH",
-            title:
-                "foobaafoobaa\n https://app.slack.com/client/T01926N9N66/D01AD7T0HQE/app",
-            url: "https://google.com"
-        },
-        {
-            id: 2,
-            userid: "U0190R4L6JH",
-            title: "please reviewplease reviewplease reviewplease review",
-            url: "https://google.com"
-        }
-    ];
-    messageUserStore = [
-        { messageId: 1, userId: "U0190R4L6JH", status: 0 },
-        { messageId: 2, userId: "U0190R4L6JH", status: 1 }
-    ];
+    messageStore = [];
+    messageUserStore = [];
 
     constructor() {
         db.getAllMessages().then((retval) => {
@@ -28,7 +11,9 @@ class Store {
                     id: val.id,
                     userid: val.user_id,
                     title: val.title,
-                    url: val.url
+                    url: val.url,
+                    channelId: val.channel_id,
+                    messageTs: val.message_ts
                 })
             );
         });
@@ -42,6 +27,10 @@ class Store {
                 })
             );
         });
+    }
+
+    getMessage(messageId) {
+        return this.messageStore.find((m) => m.id == messageId);
     }
 
     getMyMessage(userid) {
@@ -83,13 +72,22 @@ class Store {
         });
     }
 
-    async setMessage(title, userId, url) {
-        const id = await db.insertMessages(title, userId, url);
+    async setMessage(title, userId, url, channelId, messageTs) {
+        const id = await db.insertMessages(
+            title,
+            userId,
+            url,
+            channelId,
+            messageTs
+        );
+
         this.messageStore.push({
             id: id,
             userid: userId,
             title: title,
-            url: url
+            url: url,
+            channelId: channelId,
+            messageTs: messageTs
         });
         return id;
     }

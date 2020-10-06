@@ -17,10 +17,10 @@ exports.getAllMessageUsers = async () => {
     return result.rows;
 };
 
-exports.insertMessages = async (title, userId, url) => {
+exports.insertMessages = async (title, userId, url, channelId, messageTs) => {
     const result = await executeWithTransaction(
-        "insert into messages (user_id, title, url) values ($1, $2, $3) returning id;",
-        [userId, title, url]
+        "insert into messages (user_id, title, url, channel_id, message_ts) values ($1, $2, $3, $4, $5) returning id;",
+        [userId, title, url, channelId, messageTs]
     );
 
     return result.rows[0].id;

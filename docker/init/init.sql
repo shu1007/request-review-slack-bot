@@ -2,7 +2,9 @@ create table messages (
   id serial primary key,
   user_id varchar not null,
   title varchar not null,
-  url varchar not null
+  url varchar not null,
+  channel_id varchar null,
+  message_ts varchar null
 );
 
 create table messageUsers (
