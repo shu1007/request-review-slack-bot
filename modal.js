@@ -1,5 +1,3 @@
-const store = require("./store");
-
 exports.getCommandModalBlocks = (metaData) => {
     return {
         type: "modal",
@@ -91,9 +89,8 @@ exports.getMessage = (title, body, fromUserStr, toUsersStr) => {
         {
             type: "section",
             text: {
-                type: "plain_text",
-                text: `To : ${toUsersStr}`,
-                emoji: true
+                type: "mrkdwn",
+                text: `To : ${toUsersStr}`
             }
         },
         {

@@ -1,5 +1,4 @@
 const store = require("./store");
-const Users = require("./user");
 let app;
 
 exports.getAppHomeBlocks = async (userId, appObj) => {
@@ -74,9 +73,7 @@ const createMyTaskBlocks = async (userId) => {
             const reviewers = store.getUsersFromMessageId(message.id);
             const text = await Promise.all(
                 reviewers.map(async (reviewer) => {
-                    return `● <@${await Users.getUserName(
-                        reviewer.userId
-                    )}> : ${
+                    return `● <@${reviewer.userId}> : ${
                         reviewer.status == 1
                             ? ":ok:"
                             : reviewer.status == 0
@@ -156,14 +153,12 @@ const createRequestsBlocks = async (userId) => {
             });
 
             tmpBlock.push(createMessageLinkBlock(message.url));
-            const userName = await Users.getUserName(message.userid);
             tmpBlock.push({
                 type: "context",
                 elements: [
                     {
-                        type: "plain_text",
-                        text: `依頼者: <@${userName}>`,
-                        emoji: true
+                        type: "mrkdwn",
+                        text: `依頼者: <@${message.userid}>`
                     }
                 ]
             });

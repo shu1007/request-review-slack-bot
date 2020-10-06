@@ -121,13 +121,6 @@ app.view("submitRequest", async ({ ack, body, view, client, context }) => {
         const title = values.title.title.value;
         const userIds = values.users.users.selected_users;
 
-        const userNames = (
-            await Promise.all(
-                userIds.map(async (uid) => {
-                    return `<@${await Users.getUserName(uid)}>`;
-                })
-            )
-        ).join(" ");
         const myUserId = body.user.id;
         const myName = `<@${await Users.getUserName(myUserId)}>`;
 
@@ -141,7 +134,11 @@ app.view("submitRequest", async ({ ack, body, view, client, context }) => {
                     title,
                     values.body.body.value,
                     myName,
-                    userNames
+                    userIds
+                        .map((uid) => {
+                            return `<@${uid}>`;
+                        })
+                        .join(" ")
                 )
             })
         ).message.ts;
