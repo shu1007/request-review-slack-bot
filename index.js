@@ -59,9 +59,43 @@ app.view("deleteTask", async ({ ack, body, client }) => {
     }
 });
 
-const applyReviewAction = async (messageId, userId, status, client) => {
+const applyReviewAction = async (messageId, userId, status, client, blocks) => {
     await store.setStatus(messageId, userId, status);
     await renderAppHomeView(userId, client);
+
+    const message = store.getMessage(messageId);
+    if (
+        message != undefined &&
+        message.messageTs != null &&
+        message.channelId != null
+    ) {
+        await app.client.chat.postMessage({
+            token: process.env.SLACK_BOT_TOKEN,
+            channel: message.channelId,
+            text: "text",
+            thread_ts: message.messageTs,
+            blocks: blocks
+        });
+
+        blocks.push({
+            type: "context",
+            elements: [
+                {
+                    type: "mrkdwn",
+                    text: `<${message.url}|${message.title}>`
+                }
+            ]
+        });
+        await app.client.chat
+            .postMessage({
+                token: process.env.SLACK_BOT_TOKEN,
+                channel: message.userid,
+                text: "text",
+                thread_ts: message.messageTs,
+                blocks: blocks
+            })
+            .catch(console.error);
+    }
 };
 
 app.action("ok", async ({ ack, body, client }) => {
@@ -70,31 +104,17 @@ app.action("ok", async ({ ack, body, client }) => {
 
         const messageId = body.actions[0].value;
         const userId = body.user.id;
-        await applyReviewAction(messageId, userId, 1, client);
-        const message = store.getMessage(messageId);
-        if (
-            message != undefined &&
-            message.messageTs != null &&
-            message.channelId != null
-        ) {
-            const userName = await Users.getUserName(userId);
-            await app.client.chat.postMessage({
-                token: process.env.SLACK_BOT_TOKEN,
-                channel: message.channelId,
-                text: "text",
-                thread_ts: message.messageTs,
-                blocks: [
-                    {
-                        type: "section",
-                        text: {
-                            type: "plain_text",
-                            text: `LGTM! from <@${userName}>`,
-                            emoji: true
-                        }
-                    }
-                ]
-            });
-        }
+        const userName = await Users.getUserName(userId);
+        await applyReviewAction(messageId, userId, 1, client, [
+            {
+                type: "section",
+                text: {
+                    type: "plain_text",
+                    text: `LGTM! from <@${userName}>`,
+                    emoji: true
+                }
+            }
+        ]);
     } catch (error) {
         console.error(error);
     }
@@ -104,12 +124,19 @@ app.action("ng", async ({ ack, body, client }) => {
     try {
         await ack();
 
-        await applyReviewAction(
-            body.actions[0].value,
-            body.user.id,
-            -1,
-            client
-        );
+        const messageId = body.actions[0].value;
+        const userId = body.user.id;
+        const userName = await Users.getUserName(userId);
+        await applyReviewAction(messageId, userId, -1, client, [
+            {
+                type: "section",
+                text: {
+                    type: "plain_text",
+                    text: `:woman-gesturing-no: from <@${userName}>`,
+                    emoji: true
+                }
+            }
+        ]);
     } catch (error) {
         console.error(error);
     }
