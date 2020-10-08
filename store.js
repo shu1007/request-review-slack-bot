@@ -66,10 +66,14 @@ class Store {
     async resetStatus(messageId) {
         await db.resetStatus(messageId);
 
+        const userIds = [];
         this.messageUserStore.forEach((element) => {
-            if (element.messageId == messageId && element.status == -1)
+            if (element.messageId == messageId && element.status == -1) {
+                userIds.push(element.userId);
                 element.status = 0;
+            }
         });
+        return userIds;
     }
 
     async setMessage(title, userId, url, channelId, messageTs) {

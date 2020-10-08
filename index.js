@@ -145,8 +145,41 @@ app.action("ng", async ({ ack, body, client }) => {
 app.action("reRequest", async ({ ack, body, client }) => {
     try {
         await ack();
+        const messageId = body.actions[0].value;
+        const userIds = await store.resetStatus(messageId);
+        const message = store.getMessage(messageId);
 
-        await store.resetStatus(body.actions[0].value);
+        userIds.forEach(async (userId) => {
+            const userName = await Users.getUserName(userId);
+
+            app.client.chat
+                .postMessage({
+                    token: process.env.SLACK_BOT_TOKEN,
+                    channel: userId,
+                    text: "text",
+                    thread_ts: message.messageTs,
+                    blocks: [
+                        {
+                            type: "section",
+                            text: {
+                                type: "plain_text",
+                                text: `再レビュー依頼 from <@${userName}>`,
+                                emoji: true
+                            }
+                        },
+                        {
+                            type: "context",
+                            elements: [
+                                {
+                                    type: "mrkdwn",
+                                    text: `<${message.url}|${message.title}>`
+                                }
+                            ]
+                        }
+                    ]
+                })
+                .catch(console.error);
+        });
         await renderAppHomeView(body.user.id, client);
     } catch (error) {
         console.error(error);
