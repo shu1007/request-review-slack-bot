@@ -188,7 +188,17 @@ app.action("reRequest", async ({ ack, body, client }) => {
 
 app.command("/req", async ({ ack, body, client }) => {
     try {
-        await ack();
+        const channelId = body.channel_id;
+        if (!channelId.startsWith("C")) {
+            // 何がしかのバリデーション
+            ack({
+                response_action: "errors",
+                text: "ここには投稿出来ません。"
+            });
+            return;
+        } else {
+            ack();
+        }
 
         const result = await client.views.open({
             trigger_id: body.trigger_id,
