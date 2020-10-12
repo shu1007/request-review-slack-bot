@@ -18,7 +18,7 @@ const app = new App({
 const renderAppHomeView = async (userId, client) => {
     try {
         const blocks = await appHome.getAppHomeBlocks(userId, app);
-        client.views.publish({
+        await client.views.publish({
             user_id: userId,
             view: {
                 type: "home",
@@ -63,6 +63,7 @@ const applyReviewAction = async (messageId, userId, status, client, blocks) => {
     await store.setStatus(messageId, userId, status);
     await renderAppHomeView(userId, client);
 
+    setTimeout(() => {}, 300);
     const message = store.getMessage(messageId);
     if (
         message != undefined &&
@@ -98,48 +99,71 @@ const applyReviewAction = async (messageId, userId, status, client, blocks) => {
     }
 };
 
-app.action("ok", async ({ ack, body, client }) => {
-    try {
-        await ack();
+const lockKeySet = new Set();
+app.action("ok", ({ ack, body, client }) => {
+    ack();
 
-        const messageId = body.actions[0].value;
-        const userId = body.user.id;
-        const userName = await Users.getUserName(userId);
-        await applyReviewAction(messageId, userId, 1, client, [
-            {
-                type: "section",
-                text: {
-                    type: "plain_text",
-                    text: `LGTM! from <@${userName}>`,
-                    emoji: true
-                }
-            }
-        ]);
-    } catch (error) {
-        console.error(error);
+    const messageId = body.actions[0].value;
+    const userId = body.user.id;
+
+    const lockKey = `${messageId}:${userId}`;
+    if (lockKeySet.has(lockKey)) {
+        return;
+    } else {
+        lockKeySet.add(lockKey);
     }
+
+    (async () => {
+        try {
+            const userName = await Users.getUserName(userId);
+            await applyReviewAction(messageId, userId, 1, client, [
+                {
+                    type: "section",
+                    text: {
+                        type: "plain_text",
+                        text: `LGTM! from <@${userName}>`,
+                        emoji: true
+                    }
+                }
+            ]);
+            lockKeySet.delete(lockKey);
+        } catch (error) {
+            console.error(error);
+        }
+    })();
 });
 
-app.action("ng", async ({ ack, body, client }) => {
-    try {
-        await ack();
+app.action("ng", ({ ack, body, client }) => {
+    ack();
 
-        const messageId = body.actions[0].value;
-        const userId = body.user.id;
-        const userName = await Users.getUserName(userId);
-        await applyReviewAction(messageId, userId, -1, client, [
-            {
-                type: "section",
-                text: {
-                    type: "plain_text",
-                    text: `:woman-gesturing-no: from <@${userName}>`,
-                    emoji: true
-                }
-            }
-        ]);
-    } catch (error) {
-        console.error(error);
+    const messageId = body.actions[0].value;
+    const userId = body.user.id;
+
+    const lockKey = `${messageId}:${userId}`;
+    if (lockKeySet.has(lockKey)) {
+        return;
+    } else {
+        lockKeySet.add(lockKey);
     }
+
+    (async () => {
+        try {
+            const userName = await Users.getUserName(userId);
+            await applyReviewAction(messageId, userId, -1, client, [
+                {
+                    type: "section",
+                    text: {
+                        type: "plain_text",
+                        text: `:woman-gesturing-no: from <@${userName}>`,
+                        emoji: true
+                    }
+                }
+            ]);
+            lockKeySet.delete(lockKey);
+        } catch (error) {
+            console.error(error);
+        }
+    })();
 });
 
 app.action("reRequest", async ({ ack, body, client }) => {
