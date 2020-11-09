@@ -34,18 +34,22 @@ class Store {
     }
 
     getMyMessage(userid) {
-        return this.messageStore.filter((message) => message.userid === userid);
+        return this.messageStore
+            .filter((message) => message.userid === userid)
+            .sort((a, b) => a.id - b.id);
     }
 
     getRequests(userId) {
-        return this.messageStore.filter((message) =>
-            this.messageUserStore.find(
-                (mu) =>
-                    mu.messageId === message.id &&
-                    mu.userId === userId &&
-                    mu.status === 0
+        return this.messageStore
+            .filter((message) =>
+                this.messageUserStore.find(
+                    (mu) =>
+                        mu.messageId === message.id &&
+                        mu.userId === userId &&
+                        mu.status === 0
+                )
             )
-        );
+            .sort((a, b) => a.id - b.id);
     }
 
     getUsersFromMessageId(messageId) {

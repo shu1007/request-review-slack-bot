@@ -55,69 +55,65 @@ const createMyTaskBlocks = async (userId) => {
         }
     ];
 
-    await Promise.all(
-        messages.map(async (message) => {
-            const tmpBlock = [];
-            tmpBlock.push({
-                type: "divider"
-            });
-            tmpBlock.push({
-                type: "section",
-                text: {
-                    type: "mrkdwn",
-                    text: message.title
-                }
-            });
-            tmpBlock.push(createMessageLinkBlock(message.url));
+    messages.map((message) => {
+        const tmpBlock = [];
+        tmpBlock.push({
+            type: "divider"
+        });
+        tmpBlock.push({
+            type: "section",
+            text: {
+                type: "mrkdwn",
+                text: message.title
+            }
+        });
+        tmpBlock.push(createMessageLinkBlock(message.url));
 
-            const reviewers = store.getUsersFromMessageId(message.id);
-            const text = await Promise.all(
-                reviewers.map(async (reviewer) => {
-                    return `● <@${reviewer.userId}> : ${
-                        reviewer.status == 1
-                            ? ":ok:"
-                            : reviewer.status == 0
-                            ? ":eyes:"
-                            : ":ng:"
-                    }`;
-                })
-            );
-            tmpBlock.push({
-                type: "section",
-                text: {
-                    type: "mrkdwn",
-                    text: text.join("\n")
-                }
-            });
-            tmpBlock.push({
-                type: "actions",
-                elements: [
-                    {
-                        type: "button",
-                        action_id: "reRequest",
-                        text: {
-                            type: "plain_text",
-                            text: "再レビュー",
-                            emoji: true
-                        },
-                        value: `${message.id}`
+        const reviewers = store.getUsersFromMessageId(message.id);
+        const text = reviewers.map((reviewer) => {
+            return `● <@${reviewer.userId}> : ${
+                reviewer.status == 1
+                    ? ":ok:"
+                    : reviewer.status == 0
+                    ? ":eyes:"
+                    : ":ng:"
+            }`;
+        });
+        tmpBlock.push({
+            type: "section",
+            text: {
+                type: "mrkdwn",
+                text: text.join("\n")
+            }
+        });
+        tmpBlock.push({
+            type: "actions",
+            elements: [
+                {
+                    type: "button",
+                    action_id: "reRequest",
+                    text: {
+                        type: "plain_text",
+                        text: "再レビュー",
+                        emoji: true
                     },
-                    {
-                        type: "button",
-                        action_id: "deleteTaskConfirm",
-                        text: {
-                            type: "plain_text",
-                            text: "削除",
-                            emoji: true
-                        },
-                        value: `${message.id}`
-                    }
-                ]
-            });
+                    value: `${message.id}`
+                },
+                {
+                    type: "button",
+                    action_id: "deleteTaskConfirm",
+                    text: {
+                        type: "plain_text",
+                        text: "削除",
+                        emoji: true
+                    },
+                    value: `${message.id}`
+                }
+            ]
+        });
 
-            block = block.concat(tmpBlock);
-        })
-    );
+        block = block.concat(tmpBlock);
+    });
 
     return block;
 };
@@ -138,60 +134,58 @@ const createRequestsBlocks = async (userId) => {
             }
         }
     ];
-    await Promise.all(
-        requests.map(async (message) => {
-            const tmpBlock = [];
-            tmpBlock.push({
-                type: "divider"
-            });
-            tmpBlock.push({
-                type: "section",
-                text: {
-                    type: "mrkdwn",
-                    text: message.title
-                }
-            });
+    requests.map((message) => {
+        const tmpBlock = [];
+        tmpBlock.push({
+            type: "divider"
+        });
+        tmpBlock.push({
+            type: "section",
+            text: {
+                type: "mrkdwn",
+                text: message.title
+            }
+        });
 
-            tmpBlock.push(createMessageLinkBlock(message.url));
-            tmpBlock.push({
-                type: "context",
-                elements: [
-                    {
-                        type: "mrkdwn",
-                        text: `依頼者: <@${message.userid}>`
-                    }
-                ]
-            });
-            tmpBlock.push({
-                type: "actions",
-                elements: [
-                    {
-                        type: "button",
-                        action_id: "ok",
-                        text: {
-                            type: "plain_text",
-                            emoji: true,
-                            text: "OK"
-                        },
-                        style: "primary",
-                        value: `${message.id}`
+        tmpBlock.push(createMessageLinkBlock(message.url));
+        tmpBlock.push({
+            type: "context",
+            elements: [
+                {
+                    type: "mrkdwn",
+                    text: `依頼者: <@${message.userid}>`
+                }
+            ]
+        });
+        tmpBlock.push({
+            type: "actions",
+            elements: [
+                {
+                    type: "button",
+                    action_id: "ok",
+                    text: {
+                        type: "plain_text",
+                        emoji: true,
+                        text: "OK"
                     },
-                    {
-                        type: "button",
-                        action_id: "ng",
-                        text: {
-                            type: "plain_text",
-                            emoji: true,
-                            text: "NG"
-                        },
-                        style: "danger",
-                        value: `${message.id}`
-                    }
-                ]
-            });
-            block = block.concat(tmpBlock);
-        })
-    );
+                    style: "primary",
+                    value: `${message.id}`
+                },
+                {
+                    type: "button",
+                    action_id: "ng",
+                    text: {
+                        type: "plain_text",
+                        emoji: true,
+                        text: "NG"
+                    },
+                    style: "danger",
+                    value: `${message.id}`
+                }
+            ]
+        });
+        block = block.concat(tmpBlock);
+    });
     return block;
 };
 
