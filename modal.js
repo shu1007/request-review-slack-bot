@@ -111,3 +111,44 @@ exports.getMessage = (title, body, fromUserStr, toUsersStr) => {
         }
     ];
 };
+
+exports.getPagingModal = (title, contents, actionId, page, totalPage) => {
+    let elements = [];
+    if (page > 1) {
+        elements.push({
+            type: "button",
+            action_id: actionId,
+            text: {
+                type: "plain_text",
+                emoji: true,
+                text: "back"
+            },
+            value: (page - 1).toString()
+        });
+    }
+    if (page != totalPage) {
+        elements.push({
+            type: "button",
+            action_id: actionId,
+            text: {
+                type: "plain_text",
+                emoji: true,
+                text: "next"
+            },
+            value: (page + 1).toString()
+        });
+    }
+
+    return {
+        type: "modal",
+        title: {
+            type: "plain_text",
+            text: title,
+            emoji: true
+        },
+        blocks: contents.concat({
+            type: "actions",
+            elements: elements
+        })
+    };
+};
