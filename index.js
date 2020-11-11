@@ -311,7 +311,8 @@ app.action("reRequest", async ({ ack, body, client }) => {
         const args = JSON.parse(body.actions[0].value);
 
         const messageId = args.messageId;
-        const userIds = await store.resetStatus(messageId);
+        const userId = body.user.id;
+        const userIds = await store.resetStatus(messageId, userId);
         const message = store.getMessage(messageId);
 
         userIds.forEach(async (userId) => {
@@ -345,7 +346,6 @@ app.action("reRequest", async ({ ack, body, client }) => {
                 })
                 .catch(console.error);
         });
-        const userId = body.user.id;
         await renderAppHomeView(userId, client);
         if (args.isModal) {
             await client.views.update({

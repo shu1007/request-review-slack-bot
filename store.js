@@ -42,7 +42,7 @@ class Store {
     getMyMessage(userid, page) {
         const cacheKey = `${GET_MY_MESSAGE}_${userid}`;
         let result = this.cache.get(cacheKey);
-        if (true) {
+        if (result === undefined) {
             result = this.messageStore
                 .filter((message) => message.userid === userid)
                 .sort((a, b) => a.id - b.id);
@@ -92,9 +92,11 @@ class Store {
         if (index != -1) {
             this.messageUserStore[index].status = status;
         }
+
+        this.cache.del(`${GET_REQUESTS}_${userId}`);
     }
 
-    async resetStatus(messageId) {
+    async resetStatus(messageId, userId) {
         await db.resetStatus(messageId);
 
         const userIds = [];
@@ -104,6 +106,8 @@ class Store {
                 element.status = 0;
             }
         });
+
+        this.cache.del(`${GET_REQUESTS}_${userId}`);
         return userIds;
     }
 
@@ -139,13 +143,14 @@ class Store {
         });
     }
 
-    async deleteMessage(messageId) {
+    async deleteMessage(messageId, userId) {
         await db.deleteMesseges(messageId);
 
         this.messageStore = this.messageStore.filter((m) => m.id != messageId);
         this.messageUserStore = this.messageUserStore.filter(
             (mu) => mu.messageId != messageId
         );
+        this.cache.del(`${GET_MY_MESSAGE}_${userId}`);
     }
 }
 
