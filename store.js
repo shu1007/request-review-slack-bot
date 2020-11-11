@@ -1,8 +1,8 @@
 const db = require("./db");
 const NodeCache = require("node-cache");
+const constants = require("./constant");
 const GET_MY_MESSAGE = "getMyMessage";
 const GET_REQUESTS = "getRequests";
-const COUNT_PER_PAGE = 4;
 
 class Store {
     cache = new NodeCache({ stdTTL: 60, checkperiod: 1200 });
@@ -39,7 +39,7 @@ class Store {
         return this.messageStore.find((m) => m.id == messageId);
     }
 
-    getMyMessage(userid, page = 1) {
+    getMyMessage(userid, page) {
         const cacheKey = `${GET_MY_MESSAGE}_${userid}`;
         let result = this.cache.get(cacheKey);
         if (result == undefined) {
@@ -48,11 +48,14 @@ class Store {
                 .sort((a, b) => a.id - b.id);
             this.cache.set(cacheKey, result);
         }
-        const start = COUNT_PER_PAGE * (page - 1);
-        return result.slice(start, start + COUNT_PER_PAGE);
+        const start = constants.COUNT_PER_PAGE * (page - 1);
+        return {
+            allCount: result.length,
+            result: result.slice(start, start + constants.COUNT_PER_PAGE)
+        };
     }
 
-    getRequests(userId, page = 1) {
+    getRequests(userId, page) {
         const cacheKey = `${GET_REQUESTS}_${userId}`;
 
         let result = this.cache.get(cacheKey);
@@ -69,8 +72,11 @@ class Store {
                 .sort((a, b) => a.id - b.id);
             this.cache.set(cacheKey, result);
         }
-        const start = COUNT_PER_PAGE * (page - 1);
-        return result.slice(start, start + COUNT_PER_PAGE);
+        const start = constants.COUNT_PER_PAGE * (page - 1);
+        return {
+            allCount: result.length,
+            result: result.slice(start, start + constants.COUNT_PER_PAGE)
+        };
     }
 
     getUsersFromMessageId(messageId) {
