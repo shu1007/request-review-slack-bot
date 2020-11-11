@@ -115,37 +115,39 @@ exports.getMessage = (title, body, fromUserStr, toUsersStr) => {
 exports.getPagingModal = (title, contents, actionId, page, totalPage) => {
     let elements = [];
     const pageObject = { totalPage: totalPage };
-    if (page > 1) {
-        pageObject.page = page - 1;
-        elements.push({
-            type: "button",
-            action_id: `${actionId}_1`,
-            text: {
-                type: "plain_text",
-                emoji: true,
-                text: "back"
-            },
-            value: JSON.stringify(pageObject)
-        });
-    }
-    if (page != totalPage) {
-        pageObject.page = page + 1;
-        elements.push({
-            type: "button",
-            action_id: `${actionId}_2`,
-            text: {
-                type: "plain_text",
-                emoji: true,
-                text: "next"
-            },
-            value: JSON.stringify(pageObject)
-        });
-    }
-    if (elements.length > 0) {
-        contents.push({
-            type: "actions",
-            elements: elements
-        });
+    if (totalPage > 0) {
+        if (page > 1) {
+            pageObject.page = page - 1;
+            elements.push({
+                type: "button",
+                action_id: `${actionId}_1`,
+                text: {
+                    type: "plain_text",
+                    emoji: true,
+                    text: "back"
+                },
+                value: JSON.stringify(pageObject)
+            });
+        }
+        if (page != totalPage) {
+            pageObject.page = page + 1;
+            elements.push({
+                type: "button",
+                action_id: `${actionId}_2`,
+                text: {
+                    type: "plain_text",
+                    emoji: true,
+                    text: "next"
+                },
+                value: JSON.stringify(pageObject)
+            });
+        }
+        if (elements.length > 0) {
+            contents.push({
+                type: "actions",
+                elements: elements
+            });
+        }
     }
 
     return {

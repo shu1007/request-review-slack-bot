@@ -44,16 +44,14 @@ app.action("deleteTaskConfirm", async ({ ack, body, client }) => {
     args.viewHash = body.view.hash;
 
     try {
+        const options = {
+            trigger_id: body.trigger_id,
+            view: appHome.getDeleteTaskConfirmView(JSON.stringify(args))
+        };
         if (args.isModal) {
-            await client.views.push({
-                trigger_id: body.trigger_id,
-                view: appHome.getDeleteTaskConfirmView(JSON.stringify(args))
-            });
+            await client.views.push(options);
         } else {
-            await client.views.open({
-                trigger_id: body.trigger_id,
-                view: appHome.getDeleteTaskConfirmView(JSON.stringify(args))
-            });
+            await client.views.open(options);
         }
     } catch (error) {
         console.error(error);
@@ -66,21 +64,24 @@ app.view("deleteTask", async ({ ack, body, client }) => {
 
         const args = JSON.parse(body.view.private_metadata);
         const userId = body.user.id;
-        await store.deleteMessage(args.messageId);
+        await store.deleteMessage(args.messageId, userId);
 
         await renderAppHomeView(userId, client);
         const allCount = args.allCount - 1;
-        if (args.isModal && allCount >= 0) {
+        if (args.isModal) {
             const page =
                 constants.COUNT_PER_PAGE * (args.page - 1) < allCount
                     ? args.page
                     : args.page - 1;
+
             await client.views.update({
                 view_id: args.viewId,
                 hash: args.viewHash,
                 view: modal.getPagingModal(
                     "自分のタスク",
-                    await appHome.createMyTaskBlocks(userId, page, true),
+                    allCount > 0
+                        ? await appHome.createMyTaskBlocks(userId, page, true)
+                        : [],
                     "changePageForMyTasks",
                     page,
                     Math.ceil(allCount / constants.COUNT_PER_PAGE)
@@ -107,7 +108,9 @@ const applyReviewAction = async (args, userId, status, client, blocks) => {
             hash: args.viewHash,
             view: modal.getPagingModal(
                 "依頼されているもの",
-                await appHome.createRequestsBlocks(userId, page, true),
+                allCount > 0
+                    ? await appHome.createRequestsBlocks(userId, page, true)
+                    : [],
                 "changePageForRequests",
                 page,
                 Math.ceil(allCount / constants.COUNT_PER_PAGE)
