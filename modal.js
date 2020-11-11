@@ -124,7 +124,7 @@ exports.getPagingModal = (title, contents, actionId, page, totalPage) => {
                 text: {
                     type: "plain_text",
                     emoji: true,
-                    text: "back"
+                    text: ":arrow_left:"
                 },
                 value: JSON.stringify(pageObject)
             });
@@ -137,7 +137,7 @@ exports.getPagingModal = (title, contents, actionId, page, totalPage) => {
                 text: {
                     type: "plain_text",
                     emoji: true,
-                    text: "next"
+                    text: ":arrow_right:"
                 },
                 value: JSON.stringify(pageObject)
             });

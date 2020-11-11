@@ -119,6 +119,7 @@ module.exports.createMyTaskBlocks = async (
                         text: "削除",
                         emoji: true
                     },
+                    style: "danger",
                     value: JSON.stringify({
                         messageId: message.id,
                         isModal: noHeader,
