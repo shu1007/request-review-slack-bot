@@ -42,7 +42,7 @@ class Store {
     getMyMessage(userid, page) {
         const cacheKey = `${GET_MY_MESSAGE}_${userid}`;
         let result = this.cache.get(cacheKey);
-        if (result == undefined) {
+        if (true) {
             result = this.messageStore
                 .filter((message) => message.userid === userid)
                 .sort((a, b) => a.id - b.id);
@@ -59,7 +59,7 @@ class Store {
         const cacheKey = `${GET_REQUESTS}_${userId}`;
 
         let result = this.cache.get(cacheKey);
-        if (result == undefined) {
+        if (true) {
             result = this.messageStore
                 .filter((message) =>
                     this.messageUserStore.find(

@@ -4,6 +4,7 @@ const appHome = require("./appHome");
 const modal = require("./modal");
 const store = require("./store");
 const Users = require("./user");
+const constants = require("./constant");
 
 const app = new App({
     token: process.env.SLACK_BOT_TOKEN,
@@ -38,11 +39,22 @@ app.event("app_home_opened", async ({ body, client }) => {
 app.action("deleteTaskConfirm", async ({ ack, body, client }) => {
     await ack();
 
+    const args = JSON.parse(body.actions[0].value);
+    args.viewId = body.view.id;
+    args.viewHash = body.view.hash;
+
     try {
-        const result = await client.views.open({
-            trigger_id: body.trigger_id,
-            view: appHome.getDeleteTaskConfirmView(body.actions[0].value)
-        });
+        if (args.isModal) {
+            await client.views.push({
+                trigger_id: body.trigger_id,
+                view: appHome.getDeleteTaskConfirmView(JSON.stringify(args))
+            });
+        } else {
+            await client.views.open({
+                trigger_id: body.trigger_id,
+                view: appHome.getDeleteTaskConfirmView(JSON.stringify(args))
+            });
+        }
     } catch (error) {
         console.error(error);
     }
@@ -52,16 +64,56 @@ app.view("deleteTask", async ({ ack, body, client }) => {
     try {
         await ack();
 
-        await store.deleteMessage(body.view.private_metadata);
-        await renderAppHomeView(body.user.id, client);
+        const args = JSON.parse(body.view.private_metadata);
+        const userId = body.user.id;
+        await store.deleteMessage(args.messageId);
+
+        await renderAppHomeView(userId, client);
+        const allCount = args.allCount - 1;
+        if (args.isModal && allCount >= 0) {
+            const page =
+                constants.COUNT_PER_PAGE * (args.page - 1) < allCount
+                    ? args.page
+                    : args.page - 1;
+            await client.views.update({
+                view_id: args.viewId,
+                hash: args.viewHash,
+                view: modal.getPagingModal(
+                    "自分のタスク",
+                    await appHome.createMyTaskBlocks(userId, page, true),
+                    "changePageForMyTasks",
+                    page,
+                    Math.ceil(allCount / constants.COUNT_PER_PAGE)
+                )
+            });
+        }
     } catch (error) {
         console.error(error);
     }
 });
 
-const applyReviewAction = async (messageId, userId, status, client, blocks) => {
-    await store.setStatus(messageId, userId, status);
+const applyReviewAction = async (args, userId, status, client, blocks) => {
+    const messageId = args.messageId;
+    await store.setStatus(args.messageId, userId, status);
     await renderAppHomeView(userId, client);
+    if (args.isModal) {
+        const allCount = args.allCount - 1;
+        const page =
+            constants.COUNT_PER_PAGE * (args.page - 1) < allCount
+                ? args.page
+                : args.page - 1;
+        await client.views.update({
+            view_id: args.viewId,
+            hash: args.viewHash,
+            view: modal.getPagingModal(
+                "依頼されているもの",
+                await appHome.createRequestsBlocks(userId, page, true),
+                "changePageForRequests",
+                page,
+                Math.ceil(allCount / constants.COUNT_PER_PAGE)
+            )
+        });
+    }
 
     setTimeout(() => {}, 300);
     const message = store.getMessage(messageId);
@@ -103,7 +155,10 @@ const lockKeySet = new Set();
 app.action("ok", ({ ack, body, client }) => {
     ack();
 
-    const messageId = body.actions[0].value;
+    const args = JSON.parse(body.actions[0].value);
+    args.viewId = body.view.id;
+    args.viewHash = body.view.hash;
+    const messageId = args.messageId;
     const userId = body.user.id;
 
     const lockKey = `${messageId}:${userId}`;
@@ -116,7 +171,7 @@ app.action("ok", ({ ack, body, client }) => {
     (async () => {
         try {
             const userName = await Users.getUserName(userId);
-            await applyReviewAction(messageId, userId, 1, client, [
+            await applyReviewAction(args, userId, 1, client, [
                 {
                     type: "section",
                     text: {
@@ -133,10 +188,93 @@ app.action("ok", ({ ack, body, client }) => {
     })();
 });
 
+app.action("openModalForMyTasks", async ({ ack, body, client }) => {
+    await ack();
+    const userId = body.user.id;
+    try {
+        await client.views.open({
+            trigger_id: body.trigger_id,
+            view: modal.getPagingModal(
+                "自分のタスク",
+                await appHome.createMyTaskBlocks(userId, 1, true),
+                "changePageForMyTasks",
+                1,
+                body.actions[0].value
+            )
+        });
+    } catch (error) {
+        console.error(error);
+    }
+});
+
+app.action("changePageForMyTasks", async ({ ack, body, client }) => {
+    await ack();
+    const userId = body.user.id;
+    const pageObj = JSON.parse(body.actions[0].value);
+    try {
+        await client.views.update({
+            view_id: body.view.id,
+            hash: body.view.hash,
+            view: modal.getPagingModal(
+                "自分のタスク",
+                await appHome.createMyTaskBlocks(userId, pageObj.page, true),
+                "changePageForMyTasks",
+                pageObj.page,
+                pageObj.totalPage
+            )
+        });
+    } catch (error) {
+        console.error(error);
+    }
+});
+
+app.action("openModalForRequests", async ({ ack, body, client }) => {
+    await ack();
+    const userId = body.user.id;
+    try {
+        await client.views.open({
+            trigger_id: body.trigger_id,
+            view: modal.getPagingModal(
+                "依頼されているもの",
+                await appHome.createRequestsBlocks(userId, 1, true),
+                "changePageForRequests",
+                1,
+                body.actions[0].value
+            )
+        });
+    } catch (error) {
+        console.error(error);
+    }
+});
+
+app.action("changePageForRequests", async ({ ack, body, client }) => {
+    await ack();
+    const userId = body.user.id;
+    const pageObj = JSON.parse(body.actions[0].value);
+    try {
+        await client.views.update({
+            view_id: body.view.id,
+            hash: body.view.hash,
+            view: modal.getPagingModal(
+                "依頼されているもの",
+                await appHome.createRequestsBlocks(userId, pageObj.page, true),
+                "changePageForRequests",
+                pageObj.page,
+                pageObj.totalPage
+            )
+        });
+    } catch (error) {
+        console.error(error);
+    }
+});
+
 app.action("ng", ({ ack, body, client }) => {
     ack();
 
-    const messageId = body.actions[0].value;
+    const args = JSON.parse(body.actions[0].value);
+    args.viewId = body.view.id;
+    args.viewHash = body.view.hash;
+    const messageId = args.messageId;
     const userId = body.user.id;
 
     const lockKey = `${messageId}:${userId}`;
@@ -149,7 +287,7 @@ app.action("ng", ({ ack, body, client }) => {
     (async () => {
         try {
             const userName = await Users.getUserName(userId);
-            await applyReviewAction(messageId, userId, -1, client, [
+            await applyReviewAction(args, userId, -1, client, [
                 {
                     type: "section",
                     text: {
@@ -169,7 +307,10 @@ app.action("ng", ({ ack, body, client }) => {
 app.action("reRequest", async ({ ack, body, client }) => {
     try {
         await ack();
-        const messageId = body.actions[0].value;
+
+        const args = JSON.parse(body.actions[0].value);
+
+        const messageId = args.messageId;
         const userIds = await store.resetStatus(messageId);
         const message = store.getMessage(messageId);
 
@@ -204,7 +345,21 @@ app.action("reRequest", async ({ ack, body, client }) => {
                 })
                 .catch(console.error);
         });
-        await renderAppHomeView(body.user.id, client);
+        const userId = body.user.id;
+        await renderAppHomeView(userId, client);
+        if (args.isModal) {
+            await client.views.update({
+                view_id: body.view.id,
+                hash: body.view.hash,
+                view: modal.getPagingModal(
+                    "自分のタスク",
+                    await appHome.createMyTaskBlocks(userId, args.page, true),
+                    "changePageForMyTasks",
+                    args.page,
+                    Math.ceil(args.allCount / constants.COUNT_PER_PAGE)
+                )
+            });
+        }
     } catch (error) {
         console.error(error);
     }

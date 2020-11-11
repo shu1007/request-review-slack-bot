@@ -114,7 +114,9 @@ exports.getMessage = (title, body, fromUserStr, toUsersStr) => {
 
 exports.getPagingModal = (title, contents, actionId, page, totalPage) => {
     let elements = [];
+    const pageObject = { totalPage: totalPage };
     if (page > 1) {
+        pageObject.page = page - 1;
         elements.push({
             type: "button",
             action_id: actionId,
@@ -123,10 +125,11 @@ exports.getPagingModal = (title, contents, actionId, page, totalPage) => {
                 emoji: true,
                 text: "back"
             },
-            value: (page - 1).toString()
+            value: JSON.stringify(pageObject)
         });
     }
     if (page != totalPage) {
+        pageObject.page = page + 1;
         elements.push({
             type: "button",
             action_id: actionId,
@@ -135,7 +138,13 @@ exports.getPagingModal = (title, contents, actionId, page, totalPage) => {
                 emoji: true,
                 text: "next"
             },
-            value: (page + 1).toString()
+            value: JSON.stringify(pageObject)
+        });
+    }
+    if (elements.length > 0) {
+        contents.push({
+            type: "actions",
+            elements: elements
         });
     }
 
@@ -146,9 +155,15 @@ exports.getPagingModal = (title, contents, actionId, page, totalPage) => {
             text: title,
             emoji: true
         },
-        blocks: contents.concat({
-            type: "actions",
-            elements: elements
-        })
+        blocks: contents
+    };
+};
+
+exports.createActionValueObject = (page, allCount, viewId, viewHash) => {
+    return {
+        page: page,
+        allCount: allCount,
+        viewId: viewId,
+        viewHash: viewHash
     };
 };

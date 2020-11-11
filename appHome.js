@@ -1,12 +1,13 @@
 const store = require("./store");
+const constants = require("./constant");
 let app;
 
 exports.getAppHomeBlocks = async (userId, appObj) => {
     app = appObj;
 
     let blocks = [];
-    blocks = blocks.concat(await createMyTaskBlocks(userId));
-    blocks = blocks.concat(await createRequestsBlocks(userId));
+    blocks = blocks.concat(await module.exports.createMyTaskBlocks(userId));
+    blocks = blocks.concat(await module.exports.createRequestsBlocks(userId));
     return blocks;
 };
 
@@ -41,19 +42,25 @@ exports.getDeleteTaskConfirmView = (metaData) => {
         ]
     };
 };
-const createMyTaskBlocks = async (userId) => {
-    messages = store.getMyMessage(userId);
+module.exports.createMyTaskBlocks = async (
+    userId,
+    page = 1,
+    noHeader = false
+) => {
+    const storeResult = store.getMyMessage(userId, page);
+    messages = storeResult.result;
 
-    let block = [
-        {
+    let block = [];
+    if (!noHeader) {
+        block.push({
             type: "header",
             text: {
                 type: "plain_text",
                 text: "自分のタスク",
                 emoji: true
             }
-        }
-    ];
+        });
+    }
 
     messages.map((message) => {
         const tmpBlock = [];
@@ -97,7 +104,12 @@ const createMyTaskBlocks = async (userId) => {
                         text: "再レビュー",
                         emoji: true
                     },
-                    value: `${message.id}`
+                    value: JSON.stringify({
+                        messageId: message.id,
+                        isModal: noHeader,
+                        page: page,
+                        allCount: storeResult.allCount
+                    })
                 },
                 {
                     type: "button",
@@ -107,7 +119,12 @@ const createMyTaskBlocks = async (userId) => {
                         text: "削除",
                         emoji: true
                     },
-                    value: `${message.id}`
+                    value: JSON.stringify({
+                        messageId: message.id,
+                        isModal: noHeader,
+                        page: page,
+                        allCount: storeResult.allCount
+                    })
                 }
             ]
         });
@@ -115,25 +132,49 @@ const createMyTaskBlocks = async (userId) => {
         block = block.concat(tmpBlock);
     });
 
+    if (!noHeader && constants.COUNT_PER_PAGE < storeResult.allCount) {
+        block.push({
+            type: "actions",
+            elements: [
+                {
+                    type: "button",
+                    action_id: "openModalForMyTasks",
+                    text: {
+                        type: "plain_text",
+                        emoji: true,
+                        text: "詳細"
+                    },
+                    value: Math.ceil(
+                        storeResult.allCount / constants.COUNT_PER_PAGE
+                    ).toString()
+                }
+            ]
+        });
+    }
     return block;
 };
 
-const createRequestsBlocks = async (userId) => {
-    const requests = store.getRequests(userId);
+exports.createRequestsBlocks = async (userId, page = 1, noHeader = false) => {
+    const storeResult = store.getRequests(userId, page);
+    const requests = storeResult.result;
 
-    let block = [
-        {
-            type: "divider"
-        },
-        {
-            type: "header",
-            text: {
-                type: "plain_text",
-                text: "依頼されているもの",
-                emoji: true
+    let block = [];
+    if (!noHeader) {
+        block.push(
+            {
+                type: "divider"
+            },
+            {
+                type: "header",
+                text: {
+                    type: "plain_text",
+                    text: "依頼されているもの",
+                    emoji: true
+                }
             }
-        }
-    ];
+        );
+    }
+
     requests.map((message) => {
         const tmpBlock = [];
         tmpBlock.push({
@@ -169,7 +210,12 @@ const createRequestsBlocks = async (userId) => {
                         text: "OK"
                     },
                     style: "primary",
-                    value: `${message.id}`
+                    value: JSON.stringify({
+                        messageId: message.id,
+                        isModal: noHeader,
+                        page: page,
+                        allCount: storeResult.allCount
+                    })
                 },
                 {
                     type: "button",
@@ -180,12 +226,38 @@ const createRequestsBlocks = async (userId) => {
                         text: "NG"
                     },
                     style: "danger",
-                    value: `${message.id}`
+                    value: JSON.stringify({
+                        messageId: message.id,
+                        isModal: noHeader,
+                        page: page,
+                        allCount: storeResult.allCount
+                    })
                 }
             ]
         });
         block = block.concat(tmpBlock);
     });
+
+    if (!noHeader && constants.COUNT_PER_PAGE < storeResult.allCount) {
+        block.push({
+            type: "actions",
+            elements: [
+                {
+                    type: "button",
+                    action_id: "openModalForRequests",
+                    text: {
+                        type: "plain_text",
+                        emoji: true,
+                        text: "詳細"
+                    },
+                    value: Math.ceil(
+                        storeResult.allCount / constants.COUNT_PER_PAGE
+                    ).toString()
+                }
+            ]
+        });
+    }
+
     return block;
 };
 
