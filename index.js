@@ -207,7 +207,7 @@ app.action("openModalForMyTasks", async ({ ack, body, client }) => {
     }
 });
 
-app.action("changePageForMyTasks", async ({ ack, body, client }) => {
+app.action(/^changePageForMyTasks_\d/, async ({ ack, body, client }) => {
     await ack();
     const userId = body.user.id;
     const pageObj = JSON.parse(body.actions[0].value);
@@ -246,8 +246,7 @@ app.action("openModalForRequests", async ({ ack, body, client }) => {
         console.error(error);
     }
 });
-
-app.action("changePageForRequests", async ({ ack, body, client }) => {
+app.action(/^changePageForRequests_\d/, async ({ ack, body, client }) => {
     await ack();
     const userId = body.user.id;
     const pageObj = JSON.parse(body.actions[0].value);

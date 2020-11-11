@@ -119,7 +119,7 @@ exports.getPagingModal = (title, contents, actionId, page, totalPage) => {
         pageObject.page = page - 1;
         elements.push({
             type: "button",
-            action_id: actionId,
+            action_id: `${actionId}_1`,
             text: {
                 type: "plain_text",
                 emoji: true,
@@ -132,7 +132,7 @@ exports.getPagingModal = (title, contents, actionId, page, totalPage) => {
         pageObject.page = page + 1;
         elements.push({
             type: "button",
-            action_id: actionId,
+            action_id: `${actionId}_2`,
             text: {
                 type: "plain_text",
                 emoji: true,
